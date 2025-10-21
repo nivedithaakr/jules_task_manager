@@ -18,8 +18,33 @@ def save_tasks(tasks):
     with open(DATA_FILE, "w") as f:
         json.dump(tasks, f, indent=2)
 
+def get_weather(city):
+    api_key = os.environ.get("WEATHER_API_KEY")
+    if not api_key:
+        st.sidebar.warning("Weather API key not set. Please set it in your environment variables.")
+        return None
+
+    url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={city}&aqi=no"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.sidebar.error(f"Error fetching weather: {e}")
+        return None
+
 st.set_page_config(page_title="Jules Task Manager", page_icon="🧠", layout="wide")
 st.title("🧠 Jules Task Manager")
+
+st.sidebar.header("Weather")
+city = st.sidebar.text_input("Enter a city", "London")
+if st.sidebar.button("Get Weather"):
+    weather_data = get_weather(city)
+    if weather_data:
+        st.sidebar.write(f"**{weather_data['location']['name']}**")
+        st.sidebar.write(f"Temperature: {weather_data['current']['temp_c']}°C / {weather_data['current']['temp_f']}°F")
+        st.sidebar.write(f"Condition: {weather_data['current']['condition']['text']}")
+        st.sidebar.image(f"http:{weather_data['current']['condition']['icon']}")
 
 tab1, tab2, tab3 = st.tabs(["My Tasks", "Send to Jules", "Track Jules"])
 
