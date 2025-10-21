@@ -1,0 +1,13 @@
+name: Jules
+on:
+  issues:
+    types: [opened, reopened, edited]
+  issue_comment:
+    types: [created]
+
+jobs:
+  jules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Jules
+        run: echo "Jules will handle this automatically once configured"
