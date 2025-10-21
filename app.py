@@ -2,8 +2,9 @@ import streamlit as st
 import json, os, requests
 
 API_BASE = "http://localhost:8000"
-DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "tasks.json")
-os.makedirs(os.path.join(os.path.dirname(__file__), "..", "data"), exist_ok=True)
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DATA_FILE = os.path.join(DATA_DIR, "tasks.json")
 
 if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
@@ -27,6 +28,8 @@ with tab1:
     st.subheader("📋 Local Tasks")
     tasks = load_tasks()
 
+    search_query = st.text_input("Search tasks by title", "")
+
     with st.form("add_task"):
         desc = st.text_input("Task Description", placeholder="e.g., Add animations to UI")
         submitted = st.form_submit_button("Add Task")
@@ -36,16 +39,23 @@ with tab1:
             st.success("Task added!")
             st.rerun()
 
+    if search_query:
+        tasks = [task for task in tasks if search_query.lower() in task['task'].lower()]
+
     if not tasks:
-        st.info("No tasks yet.")
+        st.info("No tasks yet." if not search_query else "No tasks found matching your search.")
     else:
         for i, t in enumerate(tasks):
             col1, col2, col3 = st.columns([6, 2, 2])
             col1.write(f"**{i+1}. {t['task']}**")
             col2.write("🟡 Pending" if t["status"] == "Pending" else "🟢 Done")
             if col3.button("Mark Done", key=f"done_{i}"):
-                tasks[i]["status"] = "Done"
-                save_tasks(tasks)
+                original_tasks = load_tasks()
+                for task in original_tasks:
+                    if task['task'] == t['task'] and task['status'] == t['status']:
+                        task['status'] = "Done"
+                        break
+                save_tasks(original_tasks)
                 st.rerun()
 
 # --- Send to Jules ---
